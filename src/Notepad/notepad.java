@@ -5,6 +5,7 @@
 package Notepad;
 
 import java.awt.Font;
+import java.awt.Image;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.print.PrinterException;
@@ -15,13 +16,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.Element;
 import javax.swing.undo.UndoManager;
 
 /**
@@ -31,101 +35,18 @@ import javax.swing.undo.UndoManager;
 public class notepad extends javax.swing.JFrame {
 
 // Declare FileChooser
-    private File openedFile = null;
+    private File openedFile;
     private boolean changeMade = false;
     private final UndoManager undoManager = new UndoManager();
-
-    DocumentListener documentListener = new DocumentListener() {
-        @Override
-        public void insertUpdate(DocumentEvent e) {
-            changeMade = true;
-        }
-
-        @Override
-        public void removeUpdate(DocumentEvent e) {
-            changeMade = true;
-        }
-
-        @Override
-        public void changedUpdate(DocumentEvent e) {
-            // Plain text components don't fire these events
-        }
-    };
-
-    private void updateLabels() {
-        int caretPosition = textArea.getCaretPosition();
-        int lineNumber = 1;
-        int columnNumber = 1;
-
-        try {
-            // Get the root element of the document
-            javax.swing.text.Element root = textArea.getDocument().getDefaultRootElement();
-            // Get the line index (0-based)
-            lineNumber = root.getElementIndex(caretPosition) + 1;
-            // Get the starting offset of the line
-            int lineStartOffset = root.getElement(lineNumber - 1).getStartOffset();
-            // Calculate the column number
-            columnNumber = caretPosition - lineStartOffset + 1;
-        } catch (Exception e) {
-            // handle exception if necessary
-        }
-
-        // Update the label with the line and column numbers
-        jLabel1.setText("Ln " + lineNumber + ", Col " + columnNumber);
-
-        // Calculate character count (excluding whitespace)
-        String textChar = textArea.getText();
-        int charCount = textChar.replaceAll("\\s+", "").length(); // Remove whitespace before counting
-        jLabel3.setText(charCount + " characters");
-
-        // to get the words by splitting with space and show it in the word count
-        String text = textArea.getText().trim();
-        int wordCount = text.isEmpty() ? 0 : text.split("\\s+").length;
-        jLabel2.setText(wordCount + " Word Count");
-    }
-
-    private void saveToFile(File file) {
-        try (FileWriter writer = new FileWriter(file)) {
-            writer.write(textArea.getText());
-            openedFile = file;
-            changeMade = false;
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Error saving file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void save() {
-        if (openedFile != null) {
-            saveToFile(openedFile);
-        } else {
-            jMenuItem3ActionPerformed(null);
-        }
-        updateTitle();
-    }
-
-    // Update title only when necessary
-    private void updateTitle() {
-        if (openedFile != null) {
-            setTitle(openedFile.getName() + " - Java Notepad");
-        } else {
-            setTitle("untitled - Java Notepad");
-        }
-    }
 
     /**
      * Creates new form NewJFrame
      */
     public notepad() {
         initComponents();
-
-        textArea.getDocument().addUndoableEditListener(undoManager);
-        setTitle("untitled - Java Notepad");
-        try {
-            ImageIcon icon = new ImageIcon(getClass().getResource("Notepad.png"));
-            this.setIconImage(icon.getImage());
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error setting icon: " + e.getMessage());
-        }
+        textPane.getDocument().addUndoableEditListener(undoManager);
+        ImageIcon icon = new ImageIcon(getClass().getResource("Notepad.png"));
+        this.setIconImage(icon.getImage());
     }
 
     /**
@@ -143,7 +64,7 @@ public class notepad extends javax.swing.JFrame {
         Paste = new javax.swing.JMenuItem();
         Delete = new javax.swing.JMenuItem();
         jScrollPane2 = new javax.swing.JScrollPane();
-        textArea = new javax.swing.JTextPane();
+        textPane = new javax.swing.JTextPane();
         jPanel1 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
@@ -152,31 +73,31 @@ public class notepad extends javax.swing.JFrame {
         jSeparator10 = new javax.swing.JSeparator();
         jMenuBar2 = new javax.swing.JMenuBar();
         jMenu4 = new javax.swing.JMenu();
-        jMenuItem6 = new javax.swing.JMenuItem();
-        jMenuItem1 = new javax.swing.JMenuItem();
+        createNewFile = new javax.swing.JMenuItem();
+        openFile = new javax.swing.JMenuItem();
         jSeparator3 = new javax.swing.JPopupMenu.Separator();
-        jMenuItem2 = new javax.swing.JMenuItem();
-        jMenuItem3 = new javax.swing.JMenuItem();
+        SaveMenu = new javax.swing.JMenuItem();
+        SaveAsMenu = new javax.swing.JMenuItem();
         jSeparator2 = new javax.swing.JPopupMenu.Separator();
-        jMenuItem4 = new javax.swing.JMenuItem();
+        printFile = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
         jMenuItem5 = new javax.swing.JMenuItem();
         jMenu5 = new javax.swing.JMenu();
-        cutMenuItem = new javax.swing.JMenuItem();
-        copyMenuItem = new javax.swing.JMenuItem();
-        pasteMenuItem = new javax.swing.JMenuItem();
+        cut = new javax.swing.JMenuItem();
+        copy = new javax.swing.JMenuItem();
+        paste = new javax.swing.JMenuItem();
         jSeparator4 = new javax.swing.JPopupMenu.Separator();
-        jMenuItem11 = new javax.swing.JMenuItem();
-        jMenuItem12 = new javax.swing.JMenuItem();
+        undo = new javax.swing.JMenuItem();
+        redo = new javax.swing.JMenuItem();
         jSeparator5 = new javax.swing.JPopupMenu.Separator();
-        jMenuItem13 = new javax.swing.JMenuItem();
-        jMenuItem14 = new javax.swing.JMenuItem();
+        goToLine = new javax.swing.JMenuItem();
+        selectAll = new javax.swing.JMenuItem();
         jSeparator6 = new javax.swing.JPopupMenu.Separator();
-        jMenuItem15 = new javax.swing.JMenuItem();
+        insertDate = new javax.swing.JMenuItem();
         jSeparator7 = new javax.swing.JPopupMenu.Separator();
-        jMenuItem16 = new javax.swing.JMenuItem();
+        setFont = new javax.swing.JMenuItem();
         jMenu7 = new javax.swing.JMenu();
-        jMenuItem7 = new javax.swing.JMenuItem();
+        about = new javax.swing.JMenuItem();
 
         popupMenu.setLabel("");
         popupMenu.setName(""); // NOI18N
@@ -233,45 +154,46 @@ public class notepad extends javax.swing.JFrame {
         });
         popupMenu.add(Delete);
 
-        popupMenu.getAccessibleContext().setAccessibleParent(textArea);
+        popupMenu.getAccessibleContext().setAccessibleParent(textPane);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
-        setTitle("- Java Notepad");
+        setTitle("Untitled - Java Notepad");
         addWindowListener(new java.awt.event.WindowAdapter() {
             public void windowClosing(java.awt.event.WindowEvent evt) {
                 formWindowClosing(evt);
             }
         });
+        getContentPane().setLayout(new java.awt.BorderLayout());
 
         jScrollPane2.setBorder(null);
 
-        textArea.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 15, 5, 5));
-        textArea.setFont(new java.awt.Font("Consolas", 0, 14)); // NOI18N
-        textArea.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
-        textArea.setFocusTraversalPolicyProvider(true);
-        textArea.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        textArea.setPreferredSize(new java.awt.Dimension(780, 400));
-        textArea.setSelectedTextColor(new java.awt.Color(0, 0, 0));
-        textArea.setSelectionColor(new java.awt.Color(143, 201, 255));
-        textArea.addCaretListener(new javax.swing.event.CaretListener() {
+        textPane.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 15, 5, 5));
+        textPane.setFont(new java.awt.Font("Consolas", 0, 14)); // NOI18N
+        textPane.setCursor(new java.awt.Cursor(java.awt.Cursor.TEXT_CURSOR));
+        textPane.setFocusTraversalPolicyProvider(true);
+        textPane.setMargin(new java.awt.Insets(0, 0, 0, 0));
+        textPane.setPreferredSize(new java.awt.Dimension(780, 400));
+        textPane.setSelectedTextColor(new java.awt.Color(0, 0, 0));
+        textPane.setSelectionColor(new java.awt.Color(143, 201, 255));
+        textPane.addCaretListener(new javax.swing.event.CaretListener() {
             public void caretUpdate(javax.swing.event.CaretEvent evt) {
-                textAreaCaretUpdate(evt);
+                textPaneCaretUpdate(evt);
             }
         });
-        textArea.addFocusListener(new java.awt.event.FocusAdapter() {
+        textPane.addFocusListener(new java.awt.event.FocusAdapter() {
             public void focusGained(java.awt.event.FocusEvent evt) {
-                textAreaFocusGained(evt);
+                textPaneFocusGained(evt);
             }
         });
-        textArea.addInputMethodListener(new java.awt.event.InputMethodListener() {
+        textPane.addInputMethodListener(new java.awt.event.InputMethodListener() {
             public void caretPositionChanged(java.awt.event.InputMethodEvent evt) {
             }
             public void inputMethodTextChanged(java.awt.event.InputMethodEvent evt) {
-                textAreaInputMethodTextChanged(evt);
+                textPaneInputMethodTextChanged(evt);
             }
         });
         // Attach the popup menu to the text area
-        textArea.addMouseListener(new MouseAdapter() {
+        textPane.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 showPopup(e);
@@ -284,20 +206,20 @@ public class notepad extends javax.swing.JFrame {
 
             private void showPopup(MouseEvent e) {
                 if (e.isPopupTrigger()) {
-                    popupMenu.show(textArea, e.getX(), e.getY());
+                    popupMenu.show(textPane, e.getX(), e.getY());
                 }
             }
         });
-        jScrollPane2.setViewportView(textArea);
-        textArea.getDocument().addDocumentListener(documentListener);
+        jScrollPane2.setViewportView(textPane);
+        textPane.getDocument().addDocumentListener(documentListener);
 
         getContentPane().add(jScrollPane2, java.awt.BorderLayout.CENTER);
 
         jPanel1.setBackground(java.awt.Color.white);
         jPanel1.setToolTipText("");
-        jPanel1.setMaximumSize(new java.awt.Dimension(32767, 30));
+        jPanel1.setMaximumSize(new java.awt.Dimension(32767, 25));
         jPanel1.setName(""); // NOI18N
-        jPanel1.setPreferredSize(new java.awt.Dimension(799, 20));
+        jPanel1.setPreferredSize(new java.awt.Dimension(799, 25));
 
         jLabel1.setText("Ln 1, Col 1");
 
@@ -331,7 +253,7 @@ public class notepad extends javax.swing.JFrame {
             .addComponent(jLabel1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(jSeparator8, javax.swing.GroupLayout.Alignment.TRAILING)
             .addComponent(jSeparator10)
-            .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, 20, Short.MAX_VALUE)
+            .addComponent(jLabel3, javax.swing.GroupLayout.DEFAULT_SIZE, 25, Short.MAX_VALUE)
             .addComponent(jLabel2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
 
@@ -348,52 +270,52 @@ public class notepad extends javax.swing.JFrame {
         jMenu4.setText("File");
         jMenu4.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        jMenuItem6.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, java.awt.event.InputEvent.CTRL_DOWN_MASK));
-        jMenuItem6.setText("New");
-        jMenuItem6.addActionListener(new java.awt.event.ActionListener() {
+        createNewFile.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_N, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        createNewFile.setText("New");
+        createNewFile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem6ActionPerformed(evt);
+                createNewFileActionPerformed(evt);
             }
         });
-        jMenu4.add(jMenuItem6);
+        jMenu4.add(createNewFile);
 
-        jMenuItem1.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_DOWN_MASK));
-        jMenuItem1.setText("Open");
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+        openFile.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        openFile.setText("Open");
+        openFile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
+                openFileActionPerformed(evt);
             }
         });
-        jMenu4.add(jMenuItem1);
+        jMenu4.add(openFile);
         jMenu4.add(jSeparator3);
 
-        jMenuItem2.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_DOWN_MASK));
-        jMenuItem2.setText("Save");
-        jMenuItem2.addActionListener(new java.awt.event.ActionListener() {
+        SaveMenu.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        SaveMenu.setText("Save");
+        SaveMenu.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem2ActionPerformed(evt);
+                SaveMenuActionPerformed(evt);
             }
         });
-        jMenu4.add(jMenuItem2);
+        jMenu4.add(SaveMenu);
 
-        jMenuItem3.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.SHIFT_DOWN_MASK | java.awt.event.InputEvent.CTRL_DOWN_MASK));
-        jMenuItem3.setText("Save As");
-        jMenuItem3.addActionListener(new java.awt.event.ActionListener() {
+        SaveAsMenu.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_S, java.awt.event.InputEvent.SHIFT_DOWN_MASK | java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        SaveAsMenu.setText("Save As");
+        SaveAsMenu.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem3ActionPerformed(evt);
+                SaveAsMenuActionPerformed(evt);
             }
         });
-        jMenu4.add(jMenuItem3);
+        jMenu4.add(SaveAsMenu);
         jMenu4.add(jSeparator2);
 
-        jMenuItem4.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_P, java.awt.event.InputEvent.CTRL_DOWN_MASK));
-        jMenuItem4.setText("Print");
-        jMenuItem4.addActionListener(new java.awt.event.ActionListener() {
+        printFile.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_P, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        printFile.setText("Print");
+        printFile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem4ActionPerformed(evt);
+                printFileActionPerformed(evt);
             }
         });
-        jMenu4.add(jMenuItem4);
+        jMenu4.add(printFile);
         jMenu4.add(jSeparator1);
 
         jMenuItem5.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W, java.awt.event.InputEvent.CTRL_DOWN_MASK));
@@ -411,103 +333,103 @@ public class notepad extends javax.swing.JFrame {
         jMenu5.setText("Edit");
         jMenu5.setIconTextGap(0);
 
-        cutMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_X, java.awt.event.InputEvent.CTRL_DOWN_MASK));
-        cutMenuItem.setText("Cut");
-        cutMenuItem.addActionListener(new java.awt.event.ActionListener() {
+        cut.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_X, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        cut.setText("Cut");
+        cut.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                cutMenuItemActionPerformed(evt);
+                cutActionPerformed(evt);
             }
         });
-        jMenu5.add(cutMenuItem);
+        jMenu5.add(cut);
 
-        copyMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_C, java.awt.event.InputEvent.CTRL_DOWN_MASK));
-        copyMenuItem.setText("Copy");
-        copyMenuItem.addActionListener(new java.awt.event.ActionListener() {
+        copy.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_C, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        copy.setText("Copy");
+        copy.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                copyMenuItemActionPerformed(evt);
+                copyActionPerformed(evt);
             }
         });
-        jMenu5.add(copyMenuItem);
+        jMenu5.add(copy);
 
-        pasteMenuItem.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_DOWN_MASK));
-        pasteMenuItem.setText("Paste");
-        pasteMenuItem.addActionListener(new java.awt.event.ActionListener() {
+        paste.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        paste.setText("Paste");
+        paste.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                pasteMenuItemActionPerformed(evt);
+                pasteActionPerformed(evt);
             }
         });
-        jMenu5.add(pasteMenuItem);
+        jMenu5.add(paste);
         jMenu5.add(jSeparator4);
 
-        jMenuItem11.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, java.awt.event.InputEvent.CTRL_DOWN_MASK));
-        jMenuItem11.setText("Undo");
-        jMenuItem11.addActionListener(new java.awt.event.ActionListener() {
+        undo.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Z, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        undo.setText("Undo");
+        undo.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem11ActionPerformed(evt);
+                undoActionPerformed(evt);
             }
         });
-        jMenu5.add(jMenuItem11);
+        jMenu5.add(undo);
 
-        jMenuItem12.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Y, java.awt.event.InputEvent.CTRL_DOWN_MASK));
-        jMenuItem12.setText("Redo");
-        jMenuItem12.addActionListener(new java.awt.event.ActionListener() {
+        redo.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_Y, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        redo.setText("Redo");
+        redo.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem12ActionPerformed(evt);
+                redoActionPerformed(evt);
             }
         });
-        jMenu5.add(jMenuItem12);
+        jMenu5.add(redo);
         jMenu5.add(jSeparator5);
 
-        jMenuItem13.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_G, java.awt.event.InputEvent.CTRL_DOWN_MASK));
-        jMenuItem13.setText("Go to");
-        jMenuItem13.addActionListener(new java.awt.event.ActionListener() {
+        goToLine.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_G, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        goToLine.setText("Go to");
+        goToLine.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem13ActionPerformed(evt);
+                goToLineActionPerformed(evt);
             }
         });
-        jMenu5.add(jMenuItem13);
+        jMenu5.add(goToLine);
 
-        jMenuItem14.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_A, java.awt.event.InputEvent.CTRL_DOWN_MASK));
-        jMenuItem14.setText("Select All");
-        jMenuItem14.addActionListener(new java.awt.event.ActionListener() {
+        selectAll.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_A, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        selectAll.setText("Select All");
+        selectAll.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem14ActionPerformed(evt);
+                selectAllActionPerformed(evt);
             }
         });
-        jMenu5.add(jMenuItem14);
+        jMenu5.add(selectAll);
         jMenu5.add(jSeparator6);
 
-        jMenuItem15.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_D, java.awt.event.InputEvent.ALT_DOWN_MASK));
-        jMenuItem15.setText("Time/Date");
-        jMenuItem15.addActionListener(new java.awt.event.ActionListener() {
+        insertDate.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_D, java.awt.event.InputEvent.ALT_DOWN_MASK));
+        insertDate.setText("Time/Date");
+        insertDate.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem15ActionPerformed(evt);
+                insertDateActionPerformed(evt);
             }
         });
-        jMenu5.add(jMenuItem15);
+        jMenu5.add(insertDate);
         jMenu5.add(jSeparator7);
 
-        jMenuItem16.setText("Font");
-        jMenuItem16.addActionListener(new java.awt.event.ActionListener() {
+        setFont.setText("Font");
+        setFont.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem16ActionPerformed(evt);
+                setFontActionPerformed(evt);
             }
         });
-        jMenu5.add(jMenuItem16);
+        jMenu5.add(setFont);
 
         jMenuBar2.add(jMenu5);
 
         jMenu7.setBorder(javax.swing.BorderFactory.createEmptyBorder(8, 8, 8, 8));
         jMenu7.setText("Help");
 
-        jMenuItem7.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F1, 0));
-        jMenuItem7.setText("About");
-        jMenuItem7.addActionListener(new java.awt.event.ActionListener() {
+        about.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F1, 0));
+        about.setText("About");
+        about.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem7ActionPerformed(evt);
+                aboutActionPerformed(evt);
             }
         });
-        jMenu7.add(jMenuItem7);
+        jMenu7.add(about);
 
         jMenuBar2.add(jMenu7);
 
@@ -517,72 +439,129 @@ public class notepad extends javax.swing.JFrame {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jMenuItem2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem2ActionPerformed
-        save();
-        changeMade = false;
-    }//GEN-LAST:event_jMenuItem2ActionPerformed
+    // Document Listener to track changes in the text area
+    private final DocumentListener documentListener = new DocumentListener() {
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            changeMade = true;
+        }
 
-    private void jMenuItem3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem3ActionPerformed
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            changeMade = true;
+        }
 
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            // Plain text components don't fire these events
+        }
+    };
+
+    // Update line, column, and character/word counts
+    private void updateLabels() {
+        updateLineAndColumn();
+        updateCharacterCount();
+        updateWordCount();
+    }
+
+    private void updateLineAndColumn() {
+        int caretPosition = textPane.getCaretPosition();
+        int lineNumber = 1;
+        int columnNumber = 1;
+
+        try {
+            Element root = textPane.getDocument().getDefaultRootElement();
+            lineNumber = root.getElementIndex(caretPosition) + 1;
+            int lineStartOffset = root.getElement(lineNumber - 1).getStartOffset();
+            columnNumber = caretPosition - lineStartOffset + 1;
+        } catch (Exception e) {
+            // Handle exception if necessary
+        }
+
+        jLabel1.setText("Ln " + lineNumber + ", Col " + columnNumber);
+    }
+
+    private void updateCharacterCount() {
+        String text = textPane.getText().replaceAll("\\s+", "");
+        int charCount = text.length();
+        jLabel3.setText(charCount + " characters");
+    }
+
+    private void updateWordCount() {
+        String text = textPane.getText().trim();
+        int wordCount = text.isEmpty() ? 0 : text.split("\\s+").length;
+        jLabel2.setText(wordCount + " Word Count");
+    }
+
+    // Save file method
+    private void saveFile(File file) {
+        try ( FileWriter writer = new FileWriter(file)) {
+            writer.write(textPane.getText());
+            openedFile = file;
+            changeMade = false;
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Error saving file: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void save() {
+        if (openedFile != null) {
+            saveFile(openedFile);
+        } else {
+            saveAs();
+        }
+        updateTitle();
+    }
+
+    private void saveAs() {
         JFileChooser fileChooser = new JFileChooser();
-
-        // Remove existing filters to avoid duplicates
-        //fileChooser.resetChoosableFileFilters(); // Remove all existing filters
-
-        // Create file filter for Text Files (.txt)
-        FileNameExtensionFilter textFilter = new FileNameExtensionFilter("Text Files (*.txt)", "txt");
-
-        // Add the filter to the file chooser
-        fileChooser.addChoosableFileFilter(textFilter);
-
-        // Set default filter to Text Files
-        fileChooser.setFileFilter(textFilter);
-
-        // Set file selection mode to FILES_ONLY
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files (*.txt)", "txt"));
         fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
         int returnVal = fileChooser.showSaveDialog(this);
 
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
+            file = ensureFileExtension(file, "txt");
 
-            // Determine the selected filter
-            FileFilter selectedFilter = fileChooser.getFileFilter();
-
-            if (selectedFilter.equals(textFilter)) {
-                // If "Text Files (*.txt)" filter is selected,
-                // ensure the file ends with the selected extension
-                String[] extensions = textFilter.getExtensions(); // Use textFilter extensions for simplicity
-                String fileName = file.getName();
-                String fileExtension = getFileExtension(fileName);
-                boolean isValidExtension = false;
-
-                // Check if the selected extension matches the file extension
-                for (String ext : extensions) {
-                    if (fileExtension.equalsIgnoreCase(ext)) {
-                        isValidExtension = true;
-                        break;
-                    }
-                }
-
-                // If the file doesn't have a valid extension, append the first extension from the filter
-                if (!isValidExtension) {
-                    file = new File(file.getAbsolutePath() + "." + extensions[0]);
-                }
+            if (file.exists() && !confirmOverwrite()) {
+                return;
             }
 
-            // Check if the file already exists
-            if (file.exists()) {
-                int result = JOptionPane.showConfirmDialog(this, "The file already exists. Do you want to overwrite it?", "Confirm Overwrite", JOptionPane.YES_NO_OPTION);
-                if (result != JOptionPane.YES_OPTION) {
-                    return;
-                }
-            }
-            // Save the file
-            saveToFile(file);
+            saveFile(file);
             updateTitle();
         }
-    }//GEN-LAST:event_jMenuItem3ActionPerformed
+    }
+
+    private File ensureFileExtension(File file, String extension) {
+        String fileName = file.getName();
+        if (!fileName.toLowerCase().endsWith("." + extension)) {
+            file = new File(file.getAbsolutePath() + "." + extension);
+        }
+        return file;
+    }
+
+    private boolean confirmOverwrite() {
+        int result = JOptionPane.showConfirmDialog(this, "The file already exists. Do you want to overwrite it?", "Confirm Overwrite", JOptionPane.YES_NO_OPTION);
+        return result == JOptionPane.YES_OPTION;
+    }
+
+    private void updateTitle() {
+        if (openedFile != null) {
+            setTitle(openedFile.getName() + " - Java Notepad");
+        } else {
+            setTitle("untitled - Java Notepad");
+        }
+    }
+
+
+    private void SaveMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SaveMenuActionPerformed
+        save();
+    }//GEN-LAST:event_SaveMenuActionPerformed
+
+    private void SaveAsMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_SaveAsMenuActionPerformed
+        saveAs();
+    }//GEN-LAST:event_SaveAsMenuActionPerformed
 
     private String getFileExtension(String fileName) {
         int dotIndex = fileName.lastIndexOf('.');
@@ -595,17 +574,17 @@ public class notepad extends javax.swing.JFrame {
         System.exit(0);
     }//GEN-LAST:event_jMenuItem5ActionPerformed
 
-    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+    private void openFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openFileActionPerformed
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileFilter(new FileNameExtensionFilter("Text Files", "txt"));
-        int returnVal = fileChooser.showOpenDialog(this);
 
+        int returnVal = fileChooser.showOpenDialog(this);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fileChooser.getSelectedFile();
 
             try {
                 String content = Files.readString(file.toPath());
-                textArea.setText(content);
+                textPane.setText(content);
                 openedFile = file;
                 updateTitle();
                 changeMade = false;
@@ -613,27 +592,26 @@ public class notepad extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(this, "Error reading file: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
+    }//GEN-LAST:event_openFileActionPerformed
 
-    private void jMenuItem6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem6ActionPerformed
+    private void createNewFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createNewFileActionPerformed
 
         // Check if there are unsaved changes
-        if (!textArea.getText().isEmpty()) {
-            int result = JOptionPane.showConfirmDialog(null, "Do you want to save changes before creating a new file?", "Save Changes", JOptionPane.YES_NO_CANCEL_OPTION);
+        if (changeMade) {
+            int result = JOptionPane.showConfirmDialog(this, "Do you want to save changes before creating a new file?", "Save Changes", JOptionPane.YES_NO_CANCEL_OPTION);
             if (result == JOptionPane.YES_OPTION) {
                 save();
             } else if (result == JOptionPane.CANCEL_OPTION) {
                 return;
             }
         }
-        // Clear the text area
-        textArea.setText("");
+        textPane.setText("");
         openedFile = null;
         updateTitle();
 
-    }//GEN-LAST:event_jMenuItem6ActionPerformed
+    }//GEN-LAST:event_createNewFileActionPerformed
 
-    private void jMenuItem4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem4ActionPerformed
+    private void printFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_printFileActionPerformed
         PrinterJob printerJob = PrinterJob.getPrinterJob();
         if (printerJob.printDialog()) {
             try {
@@ -642,83 +620,77 @@ public class notepad extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(null, "Error printing: " + ex.getMessage());
             }
         }
-    }//GEN-LAST:event_jMenuItem4ActionPerformed
+    }//GEN-LAST:event_printFileActionPerformed
 
-    private void jMenuItem16ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem16ActionPerformed
-
+    private void setFontActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setFontActionPerformed
         JFontChooser fontChooser = new JFontChooser();
         int result = fontChooser.showDialog(this);
         if (result == JFontChooser.OK_OPTION) {
             Font selectedFont = fontChooser.getSelectedFont();
             if (selectedFont != null) {
-                // Use the selected font
-                textArea.setFont(selectedFont);
+                textPane.setFont(selectedFont);
             }
         }
+    }//GEN-LAST:event_setFontActionPerformed
 
-    }//GEN-LAST:event_jMenuItem16ActionPerformed
-
-    private void jMenuItem15ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem15ActionPerformed
+    private void insertDateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_insertDateActionPerformed
         SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy hh:mm:ss a");
-        textArea.setText(textArea.getText() + df.format(new Date()));
-    }//GEN-LAST:event_jMenuItem15ActionPerformed
+        textPane.setText(textPane.getText() + df.format(new Date()));
+    }//GEN-LAST:event_insertDateActionPerformed
 
-    private void cutMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cutMenuItemActionPerformed
-        textArea.cut();
+    private void cutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cutActionPerformed
+        textPane.cut();
 
-    }//GEN-LAST:event_cutMenuItemActionPerformed
+    }//GEN-LAST:event_cutActionPerformed
 
-    private void copyMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_copyMenuItemActionPerformed
-        textArea.copy();
-    }//GEN-LAST:event_copyMenuItemActionPerformed
+    private void copyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_copyActionPerformed
+        textPane.copy();
+    }//GEN-LAST:event_copyActionPerformed
 
-    private void pasteMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pasteMenuItemActionPerformed
-        textArea.paste();
-    }//GEN-LAST:event_pasteMenuItemActionPerformed
+    private void pasteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pasteActionPerformed
+        textPane.paste();
+    }//GEN-LAST:event_pasteActionPerformed
 
-    private void jMenuItem11ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem11ActionPerformed
+    private void undoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_undoActionPerformed
         if (undoManager.canUndo()) {
             undoManager.undo();
         }
-    }//GEN-LAST:event_jMenuItem11ActionPerformed
+    }//GEN-LAST:event_undoActionPerformed
 
-    private void jMenuItem12ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem12ActionPerformed
+    private void redoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_redoActionPerformed
         if (undoManager.canRedo()) {
             undoManager.redo();
         }
-    }//GEN-LAST:event_jMenuItem12ActionPerformed
+    }//GEN-LAST:event_redoActionPerformed
 
-    private void jMenuItem14ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem14ActionPerformed
-        textArea.selectAll();
-    }//GEN-LAST:event_jMenuItem14ActionPerformed
+    private void selectAllActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllActionPerformed
+        textPane.selectAll();
+    }//GEN-LAST:event_selectAllActionPerformed
 
-    private void jMenuItem13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem13ActionPerformed
-        
+    private void goToLineActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_goToLineActionPerformed
+
         String line = JOptionPane.showInputDialog(this, "Enter the Line Number");
-        
-        try{
-        if (!line.isEmpty() && line != null) {
 
-            int numline = Integer.parseInt(line);
-            int startOfset = textArea.getDocument().getDefaultRootElement().getElement(numline - 1).getStartOffset();
-            textArea.setCaretPosition(startOfset);
+        try {
+            if (!line.isEmpty() && line != null) {
+
+                int numline = Integer.parseInt(line);
+                int startOfset = textPane.getDocument().getDefaultRootElement().getElement(numline - 1).getStartOffset();
+                textPane.setCaretPosition(startOfset);
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(rootPane, "Line not found", "Error", JOptionPane.ERROR_MESSAGE);
         }
-        }catch (Exception e) {
-            JOptionPane.showMessageDialog(rootPane, "Line not found","Error",JOptionPane.ERROR_MESSAGE);
-        }
-    }//GEN-LAST:event_jMenuItem13ActionPerformed
+    }//GEN-LAST:event_goToLineActionPerformed
 
-    private void textAreaCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_textAreaCaretUpdate
-
+    private void textPaneCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_textPaneCaretUpdate
         updateLabels();
+    }//GEN-LAST:event_textPaneCaretUpdate
 
-    }//GEN-LAST:event_textAreaCaretUpdate
-
-    private void jMenuItem7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem7ActionPerformed
+    private void aboutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_aboutActionPerformed
         AboutForm about = new AboutForm(this, true);
         about.setVisible(true);
-
-    }//GEN-LAST:event_jMenuItem7ActionPerformed
+    }//GEN-LAST:event_aboutActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
         if (changeMade) {
@@ -733,34 +705,30 @@ public class notepad extends javax.swing.JFrame {
         dispose();
     }//GEN-LAST:event_formWindowClosing
 
-    private void textAreaInputMethodTextChanged(java.awt.event.InputMethodEvent evt) {//GEN-FIRST:event_textAreaInputMethodTextChanged
+    private void textPaneInputMethodTextChanged(java.awt.event.InputMethodEvent evt) {//GEN-FIRST:event_textPaneInputMethodTextChanged
 
-    }//GEN-LAST:event_textAreaInputMethodTextChanged
+    }//GEN-LAST:event_textPaneInputMethodTextChanged
 
-    private void textAreaFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_textAreaFocusGained
+    private void textPaneFocusGained(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_textPaneFocusGained
         updateLabels();
-    }//GEN-LAST:event_textAreaFocusGained
+    }//GEN-LAST:event_textPaneFocusGained
 
     private void DeleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DeleteActionPerformed
-
-        textArea.replaceSelection("");
-
+        textPane.replaceSelection("");
     }//GEN-LAST:event_DeleteActionPerformed
 
     private void CopyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CopyActionPerformed
-        textArea.copy();
+        textPane.copy();
     }//GEN-LAST:event_CopyActionPerformed
 
     private void PasteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_PasteActionPerformed
-        textArea.paste();
+        textPane.paste();
     }//GEN-LAST:event_PasteActionPerformed
-
     private void CutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_CutActionPerformed
-
-        textArea.cut();
+        textPane.cut();
     }//GEN-LAST:event_CutActionPerformed
-
-    /**
+    
+      /**
      * @param args the command line arguments
      */
     public static void main(String args[]) {
@@ -792,7 +760,7 @@ public class notepad extends javax.swing.JFrame {
                     String content = Files.readString(file.toPath());
                     notepad app = new notepad();
                     app.setVisible(true);
-                    app.textArea.setText(content);
+                    app.textPane.setText(content);
                     app.openedFile = file;
                     app.updateTitle();
                     app.changeMade = false;
@@ -815,8 +783,14 @@ public class notepad extends javax.swing.JFrame {
     private javax.swing.JMenuItem Cut;
     private javax.swing.JMenuItem Delete;
     private javax.swing.JMenuItem Paste;
-    private javax.swing.JMenuItem copyMenuItem;
-    private javax.swing.JMenuItem cutMenuItem;
+    private javax.swing.JMenuItem SaveAsMenu;
+    private javax.swing.JMenuItem SaveMenu;
+    private javax.swing.JMenuItem about;
+    private javax.swing.JMenuItem copy;
+    private javax.swing.JMenuItem createNewFile;
+    private javax.swing.JMenuItem cut;
+    private javax.swing.JMenuItem goToLine;
+    private javax.swing.JMenuItem insertDate;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -824,19 +798,7 @@ public class notepad extends javax.swing.JFrame {
     private javax.swing.JMenu jMenu5;
     private javax.swing.JMenu jMenu7;
     private javax.swing.JMenuBar jMenuBar2;
-    private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JMenuItem jMenuItem11;
-    private javax.swing.JMenuItem jMenuItem12;
-    private javax.swing.JMenuItem jMenuItem13;
-    private javax.swing.JMenuItem jMenuItem14;
-    private javax.swing.JMenuItem jMenuItem15;
-    private javax.swing.JMenuItem jMenuItem16;
-    private javax.swing.JMenuItem jMenuItem2;
-    private javax.swing.JMenuItem jMenuItem3;
-    private javax.swing.JMenuItem jMenuItem4;
     private javax.swing.JMenuItem jMenuItem5;
-    private javax.swing.JMenuItem jMenuItem6;
-    private javax.swing.JMenuItem jMenuItem7;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JPopupMenu.Separator jSeparator1;
@@ -848,9 +810,15 @@ public class notepad extends javax.swing.JFrame {
     private javax.swing.JPopupMenu.Separator jSeparator6;
     private javax.swing.JPopupMenu.Separator jSeparator7;
     private javax.swing.JSeparator jSeparator8;
-    private javax.swing.JMenuItem pasteMenuItem;
+    private javax.swing.JMenuItem openFile;
+    private javax.swing.JMenuItem paste;
     private javax.swing.JPopupMenu popupMenu;
-    private javax.swing.JTextPane textArea;
+    private javax.swing.JMenuItem printFile;
+    private javax.swing.JMenuItem redo;
+    private javax.swing.JMenuItem selectAll;
+    private javax.swing.JMenuItem setFont;
+    private javax.swing.JTextPane textPane;
+    private javax.swing.JMenuItem undo;
     // End of variables declaration//GEN-END:variables
 
 }
